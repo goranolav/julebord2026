@@ -12,7 +12,8 @@ import { useGame } from '../game/GameContext';
 import { MAX_TEAMS, MIN_TEAMS } from '../game/gameReducer';
 import { validateBoard } from '../game/boardUtils';
 import { createId } from '../utils/id';
-import { alpha, neonBox, teamColor } from '../styles/neon';
+import { alpha } from '../styles/neon';
+import { useAppearance } from '../styles/appearanceMode';
 
 interface TeamInput {
   key: string;
@@ -28,6 +29,8 @@ export default function GameSetupPage() {
   const { dispatch } = useGame();
   const navigate = useNavigate();
   const board = getBoard(boardId);
+  const { teamColors, glowBox } = useAppearance();
+  const teamColor = (index: number) => teamColors[index % teamColors.length];
 
   const [teams, setTeams] = useState<TeamInput[]>(initialTeams);
   const [error, setError] = useState<string | null>(null);
@@ -90,7 +93,7 @@ export default function GameSetupPage() {
                     flexShrink: 0,
                     borderRadius: '50%',
                     bgcolor: teamColor(index),
-                    boxShadow: neonBox(teamColor(index), 0.8),
+                    boxShadow: glowBox(teamColor(index), 0.8),
                   }}
                 />
                 <TextField
@@ -106,7 +109,7 @@ export default function GameSetupPage() {
                     },
                     '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
                       borderColor: teamColor(index),
-                      boxShadow: neonBox(teamColor(index), 0.5),
+                      boxShadow: glowBox(teamColor(index), 0.5),
                     },
                     '& .MuiInputLabel-root.Mui-focused': { color: teamColor(index) },
                   }}

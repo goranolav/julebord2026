@@ -12,14 +12,23 @@ import { no } from '../i18n/no';
 import { useGame } from '../game/GameContext';
 import { findClue, VALUE_STEP } from '../game/boardUtils';
 import { currentTurnTeam } from '../game/gameReducer';
-import { NEON, neonText, slideDown } from '../styles/neon';
+import { slideDown } from '../styles/neon';
+import { useAppearance, useThemedTeams } from '../styles/appearanceMode';
+import type { Team } from '../types/game';
+import AppLogo from '../components/AppLogo';
+import ChristmasToggle from '../components/ChristmasToggle';
 
 /** Remembers which game already played the board intro, so it only runs once per game. */
 let introPlayedForGame: string | null = null;
 
+const NO_TEAMS: Team[] = [];
+
 export default function GamePage() {
   const { game, dispatch } = useGame();
   const [confirmEnd, setConfirmEnd] = useState(false);
+  const { colors, glowText } = useAppearance();
+  // Team colours follow the active theme.
+  const teams = useThemedTeams(game?.teams ?? NO_TEAMS);
   // Each new game gets fresh team ids, so the first team id identifies the game.
   const gameKey = game?.teams[0]?.id ?? null;
   const animateIn = gameKey !== null && introPlayedForGame !== gameKey;
@@ -51,14 +60,18 @@ export default function GamePage() {
   if (game.phase === 'finished') return <Navigate to="/result" replace />;
 
   const active = game.activeClueId ? findClue(game.board, game.activeClueId) : null;
-  const turnTeam = currentTurnTeam(game);
+  const turnTeamId = currentTurnTeam(game)?.id;
+  const turnTeam = teams.find((t) => t.id === turnTeamId);
 
   return (
     <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', p: { xs: 1, md: 2 }, gap: { xs: 1, md: 2 } }}>
       <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
-        <Typography variant="h5" sx={{ color: '#ffe8fb', textShadow: neonText(NEON.magenta, 0.7) }} noWrap>
-          {game.board.name}
-        </Typography>
+        <Stack direction="row" spacing={2} sx={{ alignItems: 'center', minWidth: 0 }}>
+          <AppLogo size="small" />
+          <Typography variant="h5" sx={{ color: colors.strong, textShadow: glowText(colors.secondary, 0.7) }} noWrap>
+            {game.board.name}
+          </Typography>
+        </Stack>
         {turnTeam && (
           <Typography
             key={turnTeam.id}
@@ -68,8 +81,8 @@ export default function GamePage() {
             sx={{
               flexShrink: 1,
               minWidth: 0,
-              color: '#fff',
-              textShadow: neonText(turnTeam.color, 0.8),
+              color: colors.strong,
+              textShadow: glowText(turnTeam.color, 0.8),
               animation: `${slideDown} 400ms ease-out both`,
             }}
           >
@@ -77,6 +90,7 @@ export default function GamePage() {
           </Typography>
         )}
         <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+          <ChristmasToggle />
           <SoundToggle />
           <Button component={RouterLink} to="/" color="inherit" startIcon={<HomeIcon />}>
             {no.game.toHome}
@@ -97,7 +111,7 @@ export default function GamePage() {
       </Box>
 
       <Scoreboard
-        teams={game.teams}
+        teams={teams}
         step={VALUE_STEP}
         onAdjust={handleAdjust}
         turnTeamId={turnTeam?.id}
@@ -109,7 +123,7 @@ export default function GamePage() {
           key={active.clue.id}
           category={active.category}
           clue={active.clue}
-          teams={game.teams}
+          teams={teams}
           timerSeconds={game.board.timerSeconds}
           answeringTeamId={game.answeringTeamId}
           failedTeamIds={game.failedTeamIds}

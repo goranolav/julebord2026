@@ -5,7 +5,8 @@ import RemoveIcon from '@mui/icons-material/Remove';
 import { no } from '../i18n/no';
 import type { Team } from '../types/game';
 import { useAnimatedNumber } from '../hooks/useAnimatedNumber';
-import { alpha, DISPLAY_FONT, neonBox, neonText, scoreFlash, scoreFlashAlt } from '../styles/neon';
+import { alpha, scoreFlash, scoreFlashAlt } from '../styles/neon';
+import { useAppearance } from '../styles/appearanceMode';
 
 interface ScoreboardProps {
   teams: Team[];
@@ -63,6 +64,7 @@ function TeamScore({ team, index, step, onAdjust, highlighted }: TeamScoreProps)
   }
 
   const { color } = team;
+  const { glowText, glowBox, fonts, colors } = useAppearance();
 
   return (
     <Box
@@ -71,7 +73,7 @@ function TeamScore({ team, index, step, onAdjust, highlighted }: TeamScoreProps)
         border: highlighted ? `3px solid ${color}` : `2px solid ${alpha(color, 0.55)}`,
         borderRadius: 2,
         bgcolor: alpha(color, highlighted ? 0.18 : 0.05),
-        boxShadow: highlighted ? neonBox(color, 1.1) : `0 0 8px ${alpha(color, 0.25)}`,
+        boxShadow: highlighted ? glowBox(color, 1.1) : `0 0 8px ${alpha(color, 0.25)}`,
         opacity: highlighted ? 1 : 0.8,
         transform: highlighted ? 'translateY(-4px)' : 'none',
         transition: 'transform 250ms, box-shadow 250ms, opacity 250ms, background-color 250ms',
@@ -93,8 +95,8 @@ function TeamScore({ team, index, step, onAdjust, highlighted }: TeamScoreProps)
             px: 1,
             borderRadius: 999,
             bgcolor: color,
-            color: '#000',
-            fontFamily: DISPLAY_FONT,
+            color: colors.onAccent,
+            fontFamily: fonts.display,
             fontWeight: 900,
             fontSize: '0.7rem',
             letterSpacing: '0.15em',
@@ -112,7 +114,7 @@ function TeamScore({ team, index, step, onAdjust, highlighted }: TeamScoreProps)
           fontWeight: 700,
           fontSize: 'clamp(0.85rem, 1.4vw, 1.4rem)',
           color,
-          textShadow: neonText(color, 0.3),
+          textShadow: glowText(color, 0.3),
         }}
       >
         <Box component="span" sx={{ opacity: 0.6, mr: 0.75 }}>
@@ -132,11 +134,11 @@ function TeamScore({ team, index, step, onAdjust, highlighted }: TeamScoreProps)
           data-testid={`score-${team.id}`}
           aria-label={`${team.name}: ${team.score} ${no.common.points}`}
           sx={{
-            fontFamily: DISPLAY_FONT,
+            fontFamily: fonts.display,
             fontWeight: 900,
             fontSize: 'clamp(1.2rem, 2.6vw, 2.6rem)',
-            color: team.score < 0 ? '#ff6b8a' : '#fff',
-            textShadow: neonText(team.score < 0 ? '#ff3864' : color, 0.7),
+            color: team.score < 0 ? colors.danger : colors.strong,
+            textShadow: glowText(team.score < 0 ? colors.danger : color, 0.7),
             minWidth: '3ch',
             mx: 1,
             fontVariantNumeric: 'tabular-nums',

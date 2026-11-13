@@ -8,6 +8,8 @@ const music = vi.hoisted(() => ({
   stop: vi.fn(),
   setIntensity: vi.fn(),
   buzzer: vi.fn(),
+  xmasStart: vi.fn(),
+  bell: vi.fn(),
 }));
 
 vi.mock('../audio/countdownMusic', () => ({
@@ -17,9 +19,16 @@ vi.mock('../audio/countdownMusic', () => ({
   playTimeUpBuzzer: music.buzzer,
 }));
 
-function useTimerWithMusic(seconds: number, enabled: boolean) {
+vi.mock('../audio/christmasMusic', () => ({
+  ChristmasCountdownMusic: {
+    create: () => ({ start: music.xmasStart, stop: music.stop, setIntensity: music.setIntensity }),
+  },
+  playTimeUpBell: music.bell,
+}));
+
+function useTimerWithMusic(seconds: number, enabled: boolean, variant: 'neon' | 'christmas' = 'neon') {
   const countdown = useCountdown(seconds);
-  useCountdownMusic(countdown, enabled);
+  useCountdownMusic(countdown, enabled, variant);
   return countdown;
 }
 
@@ -64,5 +73,24 @@ describe('useCountdownMusic', () => {
     tick(2);
     expect(music.start).not.toHaveBeenCalled();
     expect(music.buzzer).not.toHaveBeenCalled();
+  });
+
+  it('uses the Christmas music and the deep bell in Christmas mode', () => {
+    renderHook(() => useTimerWithMusic(2, true, 'christmas'));
+    expect(music.xmasStart).toHaveBeenCalled();
+    expect(music.start).not.toHaveBeenCalled();
+    tick(2);
+    expect(music.bell).toHaveBeenCalledTimes(1);
+    expect(music.buzzer).not.toHaveBeenCalled();
+  });
+
+  it('switches soundtrack when the theme changes mid-clue', () => {
+    const { rerender } = renderHook(({ variant }) => useTimerWithMusic(10, true, variant), {
+      initialProps: { variant: 'neon' as 'neon' | 'christmas' },
+    });
+    expect(music.start).toHaveBeenCalledTimes(1);
+    rerender({ variant: 'christmas' });
+    expect(music.stop).toHaveBeenCalled();
+    expect(music.xmasStart).toHaveBeenCalledTimes(1);
   });
 });

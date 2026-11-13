@@ -6,7 +6,7 @@
 
 let sharedContext: AudioContext | null = null;
 
-function getAudioContext(): AudioContext | null {
+export function getAudioContext(): AudioContext | null {
   if (typeof window === 'undefined') return null;
   const Ctor =
     window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
@@ -16,7 +16,7 @@ function getAudioContext(): AudioContext | null {
   return sharedContext;
 }
 
-const midiToFreq = (midi: number) => 440 * 2 ** ((midi - 69) / 12);
+export const midiToFreq = (midi: number) => 440 * 2 ** ((midi - 69) / 12);
 
 /** Am – F – Dm – E, one chord per bar. */
 const PROGRESSION = [
@@ -35,7 +35,14 @@ const LOOKAHEAD_S = 0.12;
 const SCHEDULER_MS = 25;
 const MASTER_VOLUME = 0.32;
 
-export class CountdownMusic {
+/** Common interface for the countdown soundtracks. */
+export interface CountdownSoundtrack {
+  setIntensity(value: number): void;
+  start(): void;
+  stop(): void;
+}
+
+export class CountdownMusic implements CountdownSoundtrack {
   private readonly ctx: AudioContext;
   private readonly master: GainNode;
   private readonly noise: AudioBuffer;

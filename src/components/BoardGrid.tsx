@@ -1,13 +1,14 @@
 import { Fragment } from 'react';
 import { Box, ButtonBase, Typography } from '@mui/material';
 import type { Board } from '../types/game';
-import { alpha, DISPLAY_FONT, NEON, neonBox, neonText, powerOn, slideDown } from '../styles/neon';
+import { slideDown } from '../styles/neon';
+import { useAppearance } from '../styles/appearanceMode';
 
 interface BoardGridProps {
   board: Board;
   usedClueIds: string[];
   onSelectClue: (clueId: string) => void;
-  /** Play the "power on" intro animation (only wanted when a game starts). */
+  /** Play the intro animation (only wanted when a game starts). */
   animateIn?: boolean;
 }
 
@@ -25,6 +26,8 @@ const cellBase = {
 } as const;
 
 export default function BoardGrid({ board, usedClueIds, onSelectClue, animateIn = false }: BoardGridProps) {
+  const { tile, fonts, colors, tileIntro, id } = useAppearance();
+  const christmas = id === 'christmas';
   const used = new Set(usedClueIds);
   const columns = board.categories.map((category) => ({
     ...category,
@@ -51,9 +54,9 @@ export default function BoardGrid({ board, usedClueIds, onSelectClue, animateIn 
             sx={{
               ...cellBase,
               p: 1,
-              border: `2px solid ${NEON.cyan}`,
-              bgcolor: alpha(NEON.cyan, 0.07),
-              boxShadow: neonBox(NEON.cyan, 0.6),
+              border: `2px solid ${tile.headerBorder}`,
+              bgcolor: tile.headerBg,
+              boxShadow: tile.headerShadow,
               ...(animateIn && {
                 animation: `${slideDown} 500ms ease-out backwards`,
                 animationDelay: `${col * HEADER_STAGGER_MS}ms`,
@@ -63,14 +66,14 @@ export default function BoardGrid({ board, usedClueIds, onSelectClue, animateIn 
             <Typography
               component="h2"
               sx={{
-                fontFamily: DISPLAY_FONT,
+                fontFamily: fonts.display,
                 fontWeight: 700,
                 textTransform: 'uppercase',
-                color: '#e9feff',
+                color: tile.headerText,
                 fontSize: 'clamp(0.7rem, 1.35vw, 1.4rem)',
                 lineHeight: 1.2,
                 letterSpacing: '0.04em',
-                textShadow: neonText(NEON.cyan, 0.6),
+                textShadow: tile.headerTextShadow,
                 overflowWrap: 'anywhere',
               }}
             >
@@ -80,9 +83,7 @@ export default function BoardGrid({ board, usedClueIds, onSelectClue, animateIn 
           {Array.from({ length: rowCount }, (_, row) => {
             const clue = category.clues[row];
             if (!clue) {
-              return (
-                <Box key={`empty-${row}`} sx={{ ...cellBase, border: `1px dashed ${alpha(NEON.purple, 0.25)}` }} />
-              );
+              return <Box key={`empty-${row}`} sx={{ ...cellBase, border: `1px dashed ${tile.usedBorder}` }} />;
             }
             const isUsed = used.has(clue.id);
             return (
@@ -93,24 +94,24 @@ export default function BoardGrid({ board, usedClueIds, onSelectClue, animateIn 
                 aria-label={`${category.title}, ${clue.value}`}
                 sx={{
                   ...cellBase,
-                  border: `2px solid ${alpha(NEON.magenta, 0.8)}`,
-                  bgcolor: alpha(NEON.magenta, 0.06),
-                  boxShadow: `0 0 10px ${alpha(NEON.magenta, 0.45)}, inset 0 0 14px ${alpha(NEON.magenta, 0.25)}`,
+                  border: `2px solid ${tile.border}`,
+                  bgcolor: tile.bg,
+                  boxShadow: tile.shadow,
                   transition: 'transform 150ms, box-shadow 150ms, border-color 150ms, background-color 150ms',
                   ...(animateIn && {
-                    animation: `${powerOn} 600ms ease-out backwards`,
+                    animation: `${tileIntro} 600ms ease-out backwards`,
                     animationDelay: `${headersDoneMs + (row * columnCount + col) * CELL_STAGGER_MS}ms`,
                   }),
                   '&:hover': {
-                    borderColor: NEON.cyan,
-                    bgcolor: alpha(NEON.cyan, 0.12),
-                    boxShadow: neonBox(NEON.cyan, 1),
+                    borderColor: tile.hoverBorder,
+                    bgcolor: tile.hoverBg,
+                    boxShadow: tile.hoverShadow,
                     transform: 'translateY(-3px) scale(1.03)',
                   },
-                  '&.Mui-focusVisible': { borderColor: NEON.yellow, boxShadow: neonBox(NEON.yellow, 1) },
+                  '&.Mui-focusVisible': { borderColor: colors.gold, boxShadow: tile.hoverShadow },
                   '&.Mui-disabled': {
-                    border: `1px solid ${alpha(NEON.purple, 0.22)}`,
-                    bgcolor: alpha('#000000', 0.35),
+                    border: `1px solid ${tile.usedBorder}`,
+                    bgcolor: tile.usedBg,
                     boxShadow: 'none',
                   },
                 }}
@@ -118,11 +119,11 @@ export default function BoardGrid({ board, usedClueIds, onSelectClue, animateIn 
                 {!isUsed && (
                   <Typography
                     sx={{
-                      fontFamily: DISPLAY_FONT,
-                      color: '#fffbe0',
+                      fontFamily: fonts.display,
+                      color: tile.text,
                       fontWeight: 900,
-                      fontSize: 'clamp(1.1rem, 3.2vw, 3.2rem)',
-                      textShadow: neonText(NEON.yellow, 0.9),
+                      fontSize: christmas ? 'clamp(1.3rem, 3.6vw, 3.6rem)' : 'clamp(1.1rem, 3.2vw, 3.2rem)',
+                      textShadow: tile.textShadow,
                     }}
                   >
                     {clue.value}

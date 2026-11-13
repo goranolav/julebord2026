@@ -129,6 +129,14 @@ export const no = {
     summary: (categories: number, clues: number, seconds: number) =>
       `${categories} temaer · ${clues} spørsmål · ${seconds} sek per spørsmål`,
   },
+  christmas: {
+    on: 'Slå på juletema',
+    off: 'Slå av juletema',
+  },
+  logo: {
+    neon: 'Jeopardy!',
+    christmas: 'Jeopardy! – juleutgave',
+  },
   sound: {
     mute: 'Slå av lyd',
     unmute: 'Slå på lyd',

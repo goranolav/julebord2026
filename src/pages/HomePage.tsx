@@ -3,25 +3,31 @@ import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import SettingsIcon from '@mui/icons-material/Settings';
 import ReplayIcon from '@mui/icons-material/Replay';
 import { Link as RouterLink } from 'react-router-dom';
-import NeonLogo from '../components/NeonLogo';
+import AppLogo from '../components/AppLogo';
+import ChristmasToggle from '../components/ChristmasToggle';
 import { no } from '../i18n/no';
 import { useBoards } from '../game/BoardsContext';
 import { useGame } from '../game/GameContext';
 import { countClues, validateBoard } from '../game/boardUtils';
-import { alpha, NEON, neonBox, neonText, slideDown } from '../styles/neon';
+import { alpha, slideDown } from '../styles/neon';
+import { useAppearance } from '../styles/appearanceMode';
 
 export default function HomePage() {
   const { boards } = useBoards();
   const { game } = useGame();
+  const { colors, glowText, glowBox, id } = useAppearance();
 
   return (
-    <Box sx={{ minHeight: '100vh', py: { xs: 5, md: 8 }, px: 2 }}>
+    <Box sx={{ minHeight: '100vh', py: { xs: 5, md: 8 }, px: 2, position: 'relative' }}>
+      <Box sx={{ position: 'absolute', top: 12, right: 12 }}>
+        <ChristmasToggle />
+      </Box>
       <Stack spacing={5} sx={{ maxWidth: 960, mx: 'auto' }}>
         <Stack spacing={2} sx={{ alignItems: 'center', textAlign: 'center' }}>
-          <NeonLogo />
+          <AppLogo />
           <Typography
             variant="h6"
-            sx={{ color: '#e9feff', textShadow: neonText(NEON.cyan, 0.4), textTransform: 'uppercase' }}
+            sx={{ color: colors.text, textShadow: glowText(colors.primary, 0.4), textTransform: id === 'christmas' ? 'none' : 'uppercase' }}
           >
             {no.home.subtitle}
           </Typography>
@@ -56,7 +62,7 @@ export default function HomePage() {
         >
           {boards.map((board, index) => {
             const valid = validateBoard(board).length === 0;
-            const color = valid ? NEON.cyan : NEON.orange;
+            const color = valid ? colors.primary : colors.warning;
             return (
               <Card
                 key={board.id}
@@ -69,18 +75,18 @@ export default function HomePage() {
                   transition: 'box-shadow 200ms, transform 200ms, border-color 200ms',
                   animation: `${slideDown} 450ms ease-out backwards`,
                   animationDelay: `${index * 70}ms`,
-                  '&:hover': { borderColor: color, boxShadow: neonBox(color, 0.8), transform: 'translateY(-4px)' },
+                  '&:hover': { borderColor: color, boxShadow: glowBox(color, 0.8), transform: 'translateY(-4px)' },
                 }}
               >
                 <CardContent sx={{ flexGrow: 1 }}>
-                  <Typography variant="h6" gutterBottom sx={{ color: '#fff', textShadow: neonText(color, 0.4) }}>
+                  <Typography variant="h6" gutterBottom sx={{ color: colors.strong, textShadow: glowText(color, 0.4) }}>
                     {board.name}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
                     {no.home.boardSummary(board.categories.length, countClues(board))}
                   </Typography>
                   {!valid && (
-                    <Typography variant="body2" sx={{ mt: 1, color: NEON.orange }}>
+                    <Typography variant="body2" sx={{ mt: 1, color: colors.warning }}>
                       {no.home.invalidBoard}
                     </Typography>
                   )}

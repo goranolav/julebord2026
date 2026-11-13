@@ -9,18 +9,8 @@ import { no } from '../i18n/no';
 import { useCountdown } from '../hooks/useCountdown';
 import { currentClueValue } from '../game/gameReducer';
 import type { Category, Clue, ClueResult, Team } from '../types/game';
-import {
-  alpha,
-  BG_DARK,
-  BG_DEEP,
-  BODY_FONT,
-  DISPLAY_FONT,
-  NEON,
-  neonBox,
-  neonText,
-  revealGlow,
-  slideDown,
-} from '../styles/neon';
+import { alpha, revealGlow, slideDown } from '../styles/neon';
+import { useAppearance } from '../styles/appearanceMode';
 import CountdownTimer from './CountdownTimer';
 import SoundToggle from './SoundToggle';
 import { useSoundEnabled } from '../audio/soundSettings';
@@ -54,7 +44,8 @@ const flipIn = keyframes`
 function TurnTimer({ seconds }: { seconds: number }) {
   const countdown = useCountdown(seconds);
   const [soundEnabled] = useSoundEnabled();
-  useCountdownMusic(countdown, soundEnabled);
+  const { id } = useAppearance();
+  useCountdownMusic(countdown, soundEnabled, id);
   return <CountdownTimer countdown={countdown} />;
 }
 
@@ -81,6 +72,12 @@ export default function ClueDialog({
   // A broken image is hidden so the game can go on with just the text.
   const [imageFailed, setImageFailed] = useState(false);
   const showImage = Boolean(clue.imageUrl) && !imageFailed;
+  const a = useAppearance();
+  const { colors, tile, fonts, glowText, glowBox } = a;
+  const christmas = a.id === 'christmas';
+  // Clue value shown on the dark card (outside a tile).
+  const valueOnDark = christmas ? colors.gold : tile.text;
+  const accent = answeringTeam?.color ?? colors.primary;
 
   // Keyboard shortcuts for the host.
   useEffect(() => {
@@ -124,7 +121,7 @@ export default function ClueDialog({
       slots={{ transition: Fade }}
       slotProps={{
         paper: { sx: { bgcolor: 'transparent', border: 'none', overflow: 'hidden' } },
-        backdrop: { sx: { bgcolor: alpha(BG_DARK, 0.85) } },
+        backdrop: { sx: { bgcolor: alpha(colors.background, 0.85) } },
       }}
     >
       {/* 3D card: front = question content, back = the value tile that "flips" away. */}
@@ -146,19 +143,19 @@ export default function ClueDialog({
             justifyContent: 'center',
             backfaceVisibility: 'hidden',
             transform: 'rotateY(180deg)',
-            border: `4px solid ${NEON.magenta}`,
+            border: `4px solid ${christmas ? tile.border : colors.secondary}`,
             borderRadius: 3,
-            bgcolor: BG_DEEP,
-            boxShadow: neonBox(NEON.magenta, 2),
+            bgcolor: christmas ? tile.bg : colors.backgroundDeep,
+            boxShadow: glowBox(christmas ? tile.border : colors.secondary, 2),
           }}
         >
           <Typography
             sx={{
-              fontFamily: DISPLAY_FONT,
+              fontFamily: fonts.display,
               fontWeight: 900,
               fontSize: '20vmin',
-              color: '#fffbe0',
-              textShadow: neonText(NEON.yellow, 2),
+              color: tile.text,
+              textShadow: christmas ? tile.textShadow : glowText(colors.gold, 2),
             }}
           >
             {clue.value}
@@ -172,10 +169,10 @@ export default function ClueDialog({
             backfaceVisibility: 'hidden',
             p: { xs: 2, md: 4 },
             gap: 3,
-            border: `2px solid ${alpha(answeringTeam?.color ?? NEON.cyan, 0.8)}`,
+            border: `2px solid ${alpha(accent, 0.8)}`,
             borderRadius: 3,
-            background: `radial-gradient(ellipse at center, ${BG_DEEP} 0%, ${BG_DARK} 100%)`,
-            boxShadow: neonBox(answeringTeam?.color ?? NEON.cyan, 1),
+            background: a.cardBackground,
+            boxShadow: glowBox(accent, 1),
             transition: 'border-color 300ms, box-shadow 300ms',
             overflow: 'auto',
           }}
@@ -183,13 +180,13 @@ export default function ClueDialog({
           <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
             <Typography
               variant="h5"
-              sx={{ textTransform: 'uppercase', color: '#e9feff', textShadow: neonText(NEON.cyan, 0.6) }}
+              sx={{ textTransform: 'uppercase', color: tile.headerText, textShadow: tile.headerTextShadow }}
             >
               {category.title}
               <Box component="span" sx={{ mx: 1.5, opacity: 0.5 }}>
                 ·
               </Box>
-              <Box component="span" sx={{ color: '#fffbe0', textShadow: neonText(NEON.yellow, 0.7) }}>
+              <Box component="span" sx={{ color: valueOnDark, textShadow: glowText(colors.gold, 0.7) }}>
                 {clue.value}
               </Box>
             </Typography>
@@ -204,11 +201,11 @@ export default function ClueDialog({
               >
                 <Typography
                   variant="h4"
-                  sx={{ color: '#fff', textShadow: neonText(answeringTeam.color, 0.9), overflowWrap: 'anywhere' }}
+                  sx={{ color: colors.strong, textShadow: glowText(answeringTeam.color, 0.9), overflowWrap: 'anywhere' }}
                 >
                   {no.clue.answering(answeringTeam.name)}
                 </Typography>
-                <Typography sx={{ color: failedTeams.length ? NEON.orange : 'text.secondary', fontWeight: 600 }}>
+                <Typography sx={{ color: failedTeams.length ? colors.warning : 'text.secondary', fontWeight: 600 }}>
                   {failedTeams.length ? no.clue.worthHalf(pointsNow) : no.clue.worth(pointsNow)}
                 </Typography>
               </Stack>
@@ -238,8 +235,8 @@ export default function ClueDialog({
                   maxHeight: answerRevealed ? '32vh' : '45vh',
                   objectFit: 'contain',
                   borderRadius: 2,
-                  border: `2px solid ${alpha(NEON.cyan, 0.7)}`,
-                  boxShadow: neonBox(NEON.cyan, 0.6),
+                  border: `2px solid ${alpha(colors.primary, 0.7)}`,
+                  boxShadow: glowBox(colors.primary, 0.6),
                   bgcolor: alpha('#000000', 0.35),
                   transition: 'max-height 300ms',
                 }}
@@ -247,13 +244,13 @@ export default function ClueDialog({
             )}
             <Typography
               sx={{
-                fontFamily: BODY_FONT,
+                fontFamily: fonts.body,
                 textAlign: 'center',
                 fontWeight: 700,
                 fontSize: showImage ? 'clamp(1.4rem, 3.5vw, 3.5rem)' : 'clamp(1.6rem, 4.5vw, 4.5rem)',
                 lineHeight: 1.2,
-                color: '#fff',
-                textShadow: `0 0 18px ${alpha('#ffffff', 0.45)}`,
+                color: colors.strong,
+                textShadow: christmas ? '0 2px 6px rgba(0, 0, 0, 0.6)' : `0 0 18px ${alpha('#ffffff', 0.45)}`,
                 whiteSpace: 'pre-wrap',
               }}
             >
@@ -263,18 +260,18 @@ export default function ClueDialog({
             {answerRevealed && (
               <Box sx={{ textAlign: 'center', animation: `${revealGlow} 500ms ease-out both` }}>
                 <Box
-                  sx={{ height: 2, mx: 'auto', mb: 2, width: '60%', bgcolor: NEON.green, boxShadow: `0 0 12px ${NEON.green}` }}
+                  sx={{ height: 2, mx: 'auto', mb: 2, width: '60%', bgcolor: colors.success, boxShadow: `0 0 12px ${colors.success}` }}
                 />
-                <Typography variant="overline" sx={{ fontSize: '1rem', color: NEON.green }}>
+                <Typography variant="overline" sx={{ fontSize: '1rem', color: colors.success }}>
                   {no.clue.answer}
                 </Typography>
                 <Typography
                   sx={{
-                    fontFamily: BODY_FONT,
-                    color: '#eaffe4',
+                    fontFamily: fonts.body,
+                    color: christmas ? colors.strong : '#eaffe4',
                     fontWeight: 700,
                     fontSize: 'clamp(1.4rem, 3.5vw, 3.5rem)',
-                    textShadow: neonText(NEON.green, 1),
+                    textShadow: glowText(colors.success, 1),
                     whiteSpace: 'pre-wrap',
                   }}
                 >
@@ -319,7 +316,7 @@ export default function ClueDialog({
                     size="large"
                     startIcon={<CheckIcon />}
                     onClick={onCorrect}
-                    sx={{ fontSize: '1.2rem', px: 5, py: 1.5, boxShadow: `0 0 14px ${alpha(NEON.green, 0.6)}` }}
+                    sx={{ fontSize: '1.2rem', px: 5, py: 1.5, boxShadow: `0 0 14px ${alpha(colors.success, 0.6)}` }}
                   >
                     {no.clue.correct}
                   </Button>
@@ -345,8 +342,8 @@ export default function ClueDialog({
                   variant="h4"
                   sx={{
                     textAlign: 'center',
-                    color: '#fff',
-                    textShadow: neonText(winner?.color ?? NEON.magenta, winner ? 1 : 0.6),
+                    color: colors.strong,
+                    textShadow: glowText(winner?.color ?? colors.secondary, winner ? 1 : 0.6),
                   }}
                 >
                   {winner && clueResult ? no.clue.awarded(winner.name, clueResult.points) : no.clue.nobodyCorrect}

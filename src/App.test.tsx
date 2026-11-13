@@ -1,18 +1,18 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { ThemeProvider } from '@mui/material';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 import App from './App';
 import { BoardsProvider } from './game/BoardsContext';
 import { GameProvider } from './game/GameContext';
-import { theme } from './theme';
+import AppShell from './AppShell';
+import { THEME_KEY } from './styles/appearanceMode';
 import { createSampleBoard } from './data/sampleBoard';
 import { saveBoards } from './storage/boardStorage';
 
 function renderApp(path = '/') {
   return render(
-    <ThemeProvider theme={theme}>
+    <AppShell>
       <MemoryRouter initialEntries={[path]}>
         <BoardsProvider>
           <GameProvider>
@@ -20,12 +20,13 @@ function renderApp(path = '/') {
           </GameProvider>
         </BoardsProvider>
       </MemoryRouter>
-    </ThemeProvider>,
+    </AppShell>,
   );
 }
 
 describe('App smoke test', () => {
-  it('plays turn-based: wrong answer passes, the next team steals for half', async () => {
+  it.each(['neon', 'christmas'])('plays turn-based (%s): wrong answer passes, the next team steals for half', async (mode) => {
+    localStorage.setItem(THEME_KEY, mode);
     const user = userEvent.setup();
     renderApp();
 
@@ -100,5 +101,18 @@ describe('App smoke test', () => {
     fireEvent.change(firstImageField, { target: { value: 'https://example.com/a.png' } });
     expect(screen.getByAltText('Forhåndsvisning av bilde')).toHaveAttribute('src', 'https://example.com/a.png');
     expect(screen.getByText('Lagre').closest('button')).toBeEnabled();
+  });
+
+  it('toggles the Christmas theme from the home page and remembers it', async () => {
+    const user = userEvent.setup();
+    renderApp();
+    expect(screen.getByRole('img', { name: 'Jeopardy!' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Slå på juletema' }));
+    expect(screen.getByRole('img', { name: 'Jeopardy! – juleutgave' })).toBeInTheDocument();
+    expect(localStorage.getItem(THEME_KEY)).toBe('christmas');
+
+    await user.click(screen.getByRole('button', { name: 'Slå av juletema' }));
+    expect(screen.getByRole('img', { name: 'Jeopardy!' })).toBeInTheDocument();
   });
 });
