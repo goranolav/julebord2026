@@ -108,6 +108,15 @@ describe('App smoke test', () => {
     expect(screen.getByRole('img', { name: 'Jeopardy!' })).toBeInTheDocument();
   });
 
+  it('only offers the answer sheet from the admin panel', async () => {
+    const user = userEvent.setup();
+    renderApp();
+    expect(screen.queryByRole('link', { name: /fasit/i })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('link', { name: /spill/i }));
+    expect(screen.getByRole('button', { name: /start spill/i })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /fasit/i })).not.toBeInTheDocument();
+  });
+
   it('lets the host undo with Ctrl+Z and uses safe shortcuts', async () => {
     const user = userEvent.setup();
     renderApp();

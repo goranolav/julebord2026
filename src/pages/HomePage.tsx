@@ -1,4 +1,4 @@
-import { Alert, Box, Button, Card, CardActions, CardContent, Stack, Typography } from '@mui/material';
+import { Alert, Box, Button, Card, CardActions, CardContent, IconButton, Stack, Tooltip, Typography } from '@mui/material';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import SettingsIcon from '@mui/icons-material/Settings';
 import ReplayIcon from '@mui/icons-material/Replay';
@@ -19,9 +19,14 @@ export default function HomePage() {
 
   return (
     <Box sx={{ minHeight: '100vh', py: { xs: 5, md: 8 }, px: 2, position: 'relative' }}>
-      <Box sx={{ position: 'absolute', top: 12, right: 12 }}>
+      <Stack direction="row" spacing={0.5} sx={{ position: 'absolute', top: 12, right: 12 }}>
         <ChristmasToggle />
-      </Box>
+        <Tooltip title={no.home.admin}>
+          <IconButton component={RouterLink} to="/admin" aria-label={no.home.admin} sx={{ color: 'text.secondary' }}>
+            <SettingsIcon />
+          </IconButton>
+        </Tooltip>
+      </Stack>
       <Stack spacing={5} sx={{ maxWidth: 960, mx: 'auto' }}>
         <Stack spacing={2} sx={{ alignItems: 'center', textAlign: 'center' }}>
           <AppLogo />
@@ -33,8 +38,8 @@ export default function HomePage() {
           </Typography>
         </Stack>
 
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ justifyContent: 'center' }}>
-          {game?.phase === 'playing' && (
+        {game?.phase === 'playing' && (
+          <Stack direction="row" sx={{ justifyContent: 'center' }}>
             <Button
               component={RouterLink}
               to="/game"
@@ -45,11 +50,8 @@ export default function HomePage() {
             >
               {no.home.continueGame}
             </Button>
-          )}
-          <Button component={RouterLink} to="/admin" variant="outlined" size="large" startIcon={<SettingsIcon />}>
-            {no.home.admin}
-          </Button>
-        </Stack>
+          </Stack>
+        )}
 
         {boards.length === 0 && <Alert severity="info">{no.home.noBoards}</Alert>}
 

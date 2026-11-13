@@ -128,7 +128,6 @@ export const no = {
     title: 'Fasit',
     print: 'Skriv ut / lagre som PDF',
     open: 'Fasit',
-    printLink: 'Skriv ut fasit',
     saveFirst: 'Lagre endringene før du åpner fasiten',
     notFound: 'Fant ikke brettet.',
     hasImage: 'Spørsmålet har bilde',
