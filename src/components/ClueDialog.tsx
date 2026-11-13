@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Box, Button, Dialog, Fade, Stack, Typography } from '@mui/material';
 import { keyframes } from '@mui/material/styles';
 import CheckIcon from '@mui/icons-material/Check';
@@ -78,6 +78,9 @@ export default function ClueDialog({
   const pointsNow = currentClueValue(clue.value, failedTeamIds.length);
   const winner = clueResult?.teamId ? (teams.find((t) => t.id === clueResult.teamId) ?? null) : null;
   const [soundEnabled, setSoundEnabled] = useSoundEnabled();
+  // A broken image is hidden so the game can go on with just the text.
+  const [imageFailed, setImageFailed] = useState(false);
+  const showImage = Boolean(clue.imageUrl) && !imageFailed;
 
   // Keyboard shortcuts for the host.
   useEffect(() => {
@@ -213,13 +216,41 @@ export default function ClueDialog({
             </Stack>
           )}
 
-          <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 4 }}>
+          <Box
+            sx={{
+              flexGrow: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              gap: showImage ? 2.5 : 4,
+            }}
+          >
+            {showImage && (
+              <Box
+                component="img"
+                src={clue.imageUrl}
+                alt={clue.question}
+                onError={() => setImageFailed(true)}
+                sx={{
+                  display: 'block',
+                  mx: 'auto',
+                  maxWidth: '100%',
+                  maxHeight: answerRevealed ? '32vh' : '45vh',
+                  objectFit: 'contain',
+                  borderRadius: 2,
+                  border: `2px solid ${alpha(NEON.cyan, 0.7)}`,
+                  boxShadow: neonBox(NEON.cyan, 0.6),
+                  bgcolor: alpha('#000000', 0.35),
+                  transition: 'max-height 300ms',
+                }}
+              />
+            )}
             <Typography
               sx={{
                 fontFamily: BODY_FONT,
                 textAlign: 'center',
                 fontWeight: 700,
-                fontSize: 'clamp(1.6rem, 4.5vw, 4.5rem)',
+                fontSize: showImage ? 'clamp(1.4rem, 3.5vw, 3.5rem)' : 'clamp(1.6rem, 4.5vw, 4.5rem)',
                 lineHeight: 1.2,
                 color: '#fff',
                 textShadow: `0 0 18px ${alpha('#ffffff', 0.45)}`,

@@ -1,11 +1,12 @@
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import { Box, Button, Card, CardContent, IconButton, Stack, TextField, Tooltip, Typography } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import BrokenImageIcon from '@mui/icons-material/BrokenImage';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
 import { no } from '../i18n/no';
 import type { Category, Clue } from '../types/game';
-import { createEmptyClue, nextClueValue } from '../game/boardUtils';
+import { createEmptyClue, isValidImageUrl, nextClueValue } from '../game/boardUtils';
 
 interface CategoryEditorProps {
   category: Category;
@@ -28,6 +29,21 @@ function CategoryEditor({ category, index, onChange, onDelete }: CategoryEditorP
 
   const deleteClue = (clueId: string) => {
     onChange({ ...category, clues: category.clues.filter((clue) => clue.id !== clueId) });
+  };
+
+  const setImageUrl = (clueId: string, value: string) => {
+    onChange({
+      ...category,
+      clues: category.clues.map((clue) => {
+        if (clue.id !== clueId) return clue;
+        if (value === '') {
+          const { imageUrl: _removed, ...rest } = clue;
+          void _removed;
+          return rest;
+        }
+        return { ...clue, imageUrl: value };
+      }),
+    });
   };
 
   return (
@@ -53,8 +69,8 @@ function CategoryEditor({ category, index, onChange, onDelete }: CategoryEditorP
 
         <Stack spacing={1.5}>
           {category.clues.map((clue) => (
+            <Stack key={clue.id} spacing={1}>
             <Box
-              key={clue.id}
               sx={{
                 display: 'grid',
                 gap: 1,
@@ -95,6 +111,19 @@ function CategoryEditor({ category, index, onChange, onDelete }: CategoryEditorP
                 </IconButton>
               </Tooltip>
             </Box>
+            <Stack direction="row" spacing={1} sx={{ alignItems: 'center', pl: { xs: 0, sm: '98px' } }}>
+              <TextField
+                label={no.editor.imageUrl}
+                size="small"
+                type="url"
+                value={clue.imageUrl ?? ''}
+                onChange={(e) => setImageUrl(clue.id, e.target.value)}
+                placeholder="https://"
+                fullWidth
+              />
+              {clue.imageUrl?.trim() && <ImagePreview key={clue.imageUrl} url={clue.imageUrl.trim()} />}
+            </Stack>
+            </Stack>
           ))}
         </Stack>
 
@@ -103,6 +132,27 @@ function CategoryEditor({ category, index, onChange, onDelete }: CategoryEditorP
         </Button>
       </CardContent>
     </Card>
+  );
+}
+
+/** Small thumbnail so the host spots broken links before the game. Keyed by URL to reset the error state. */
+function ImagePreview({ url }: { url: string }) {
+  const [failed, setFailed] = useState(false);
+  if (!isValidImageUrl(url) || failed) {
+    return (
+      <Tooltip title={no.editor.imagePreviewError}>
+        <BrokenImageIcon color="warning" aria-label={no.editor.imagePreviewError} sx={{ flexShrink: 0 }} />
+      </Tooltip>
+    );
+  }
+  return (
+    <Box
+      component="img"
+      src={url}
+      alt={no.editor.imagePreviewAlt}
+      onError={() => setFailed(true)}
+      sx={{ height: 64, maxWidth: 120, objectFit: 'contain', borderRadius: 1, flexShrink: 0, bgcolor: 'rgba(0,0,0,0.3)' }}
+    />
   );
 }
 

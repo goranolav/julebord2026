@@ -63,6 +63,16 @@ export function findClue(board: Board, clueId: string): { category: Category; cl
   return null;
 }
 
+/** Only absolute http(s) links are allowed as clue images. */
+export function isValidImageUrl(value: string): boolean {
+  try {
+    const url = new URL(value.trim());
+    return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
 /** Returns a list of human-readable (Norwegian) validation errors. Empty list = valid. */
 export function validateBoard(board: Board): string[] {
   const errors: string[] = [];
@@ -92,6 +102,9 @@ export function validateBoard(board: Board): string[] {
       if (!clue.answer.trim()) errors.push(v.clueAnswerRequired(label, clueIndex + 1));
       if (!Number.isFinite(clue.value) || clue.value <= 0) {
         errors.push(v.clueValuePositive(label, clueIndex + 1));
+      }
+      if (clue.imageUrl !== undefined && clue.imageUrl.trim() !== '' && !isValidImageUrl(clue.imageUrl)) {
+        errors.push(v.clueImageInvalid(label, clueIndex + 1));
       }
     });
   });

@@ -151,11 +151,13 @@ function toClue(value: unknown): Clue | null {
   if (!isObject(value)) return null;
   if (typeof value.question !== 'string' || typeof value.answer !== 'string') return null;
   const numeric = Number(value.value);
+  const imageUrl = typeof value.imageUrl === 'string' ? value.imageUrl.trim() : '';
   return {
     id: typeof value.id === 'string' ? value.id : createId(),
     value: Number.isFinite(numeric) ? numeric : 0,
     question: value.question,
     answer: value.answer,
+    ...(imageUrl && { imageUrl }),
   };
 }
 

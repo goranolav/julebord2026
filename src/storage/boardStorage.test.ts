@@ -124,4 +124,38 @@ describe('validateBoard', () => {
     const board = { ...createSampleBoard(), name: ' ', timerSeconds: 1 };
     expect(validateBoard(board)).toHaveLength(2);
   });
+
+  it('accepts empty or http(s) image links and rejects others', () => {
+    const withImage = (imageUrl: string) => {
+      const board = createSampleBoard();
+      board.categories[0].clues[0].imageUrl = imageUrl;
+      return validateBoard(board);
+    };
+    expect(withImage('')).toEqual([]);
+    expect(withImage('https://example.com/bilde.jpg')).toEqual([]);
+    expect(withImage('http://example.com/bilde.png')).toEqual([]);
+    expect(withImage('javascript:alert(1)')).toHaveLength(1);
+    expect(withImage('bare tekst')).toHaveLength(1);
+    expect(withImage('data:image/png;base64,AAAA')).toHaveLength(1);
+  });
+});
+
+describe('clue images in import / export', () => {
+  it('keeps imageUrl through export and import', () => {
+    const board = createSampleBoard();
+    board.categories[0].clues[0].imageUrl = 'https://example.com/oslo.jpg';
+    const [imported] = parseBoardsJson(exportBoardsJson([board]));
+    expect(imported.categories[0].clues[0].imageUrl).toBe('https://example.com/oslo.jpg');
+    expect(imported.categories[0].clues[1]).not.toHaveProperty('imageUrl');
+  });
+
+  it('drops non-string or blank imageUrl values', () => {
+    const board = createSampleBoard();
+    const raw = JSON.parse(exportBoardsJson([board]));
+    raw.boards[0].categories[0].clues[0].imageUrl = 42;
+    raw.boards[0].categories[0].clues[1].imageUrl = '   ';
+    const [imported] = parseBoardsJson(JSON.stringify(raw));
+    expect(imported.categories[0].clues[0]).not.toHaveProperty('imageUrl');
+    expect(imported.categories[0].clues[1]).not.toHaveProperty('imageUrl');
+  });
 });

@@ -3,6 +3,8 @@ export interface Clue {
   value: number;
   question: string;
   answer: string;
+  /** Optional http(s) image shown together with the question. */
+  imageUrl?: string;
 }
 
 export interface Category {

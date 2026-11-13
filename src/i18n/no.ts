@@ -54,6 +54,9 @@ export const no = {
     value: 'Poeng',
     question: 'Spørsmål',
     answer: 'Svar',
+    imageUrl: 'Bildelenke (valgfri)',
+    imagePreviewError: 'Kunne ikke laste bildet – sjekk lenken.',
+    imagePreviewAlt: 'Forhåndsvisning av bilde',
     saved: 'Brettet er lagret.',
     unsavedChanges: 'Du har endringer som ikke er lagret.',
     notFound: 'Fant ikke brettet.',
@@ -68,6 +71,8 @@ export const no = {
     clueQuestionRequired: (title: string, index: number) => `«${title}», spørsmål ${index}: mangler spørsmålstekst.`,
     clueAnswerRequired: (title: string, index: number) => `«${title}», spørsmål ${index}: mangler svar.`,
     clueValuePositive: (title: string, index: number) => `«${title}», spørsmål ${index}: poeng må være større enn 0.`,
+    clueImageInvalid: (title: string, index: number) =>
+      `«${title}», spørsmål ${index}: ugyldig bildelenke (må starte med http:// eller https://).`,
   },
   setup: {
     title: 'Sett opp lag',

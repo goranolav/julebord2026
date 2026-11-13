@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ThemeProvider } from '@mui/material';
 import { MemoryRouter } from 'react-router-dom';
@@ -7,6 +7,8 @@ import App from './App';
 import { BoardsProvider } from './game/BoardsContext';
 import { GameProvider } from './game/GameContext';
 import { theme } from './theme';
+import { createSampleBoard } from './data/sampleBoard';
+import { saveBoards } from './storage/boardStorage';
 
 function renderApp(path = '/') {
   return render(
@@ -73,5 +75,30 @@ describe('App smoke test', () => {
     await user.click(screen.getByText('Eksempelbrett'));
     expect(screen.getByDisplayValue('Norsk geografi')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /lagre/i })).toBeDisabled();
+  });
+
+  it('shows the clue image in the question view', async () => {
+    const board = createSampleBoard();
+    board.categories[0].clues[0].imageUrl = 'https://example.com/oslo.jpg';
+    saveBoards([board]);
+
+    const user = userEvent.setup();
+    renderApp(`/setup/${board.id}`);
+    await user.click(screen.getByRole('button', { name: /start spill/i }));
+    await user.click(screen.getByRole('button', { name: 'Norsk geografi, 100' }));
+
+    const image = screen.getByRole('img', { name: 'Hva heter Norges hovedstad?' });
+    expect(image).toHaveAttribute('src', 'https://example.com/oslo.jpg');
+    expect(screen.getByText('Hva heter Norges hovedstad?')).toBeInTheDocument();
+  });
+
+  it('lets the admin add an image link to a clue', async () => {
+    const user = userEvent.setup();
+    renderApp('/admin');
+    await user.click(screen.getByText('Eksempelbrett'));
+    const [firstImageField] = screen.getAllByPlaceholderText('https://');
+    fireEvent.change(firstImageField, { target: { value: 'https://example.com/a.png' } });
+    expect(screen.getByAltText('Forhåndsvisning av bilde')).toHaveAttribute('src', 'https://example.com/a.png');
+    expect(screen.getByText('Lagre').closest('button')).toBeEnabled();
   });
 });
