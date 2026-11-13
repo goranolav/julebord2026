@@ -25,8 +25,6 @@ export interface Team {
   id: string;
   name: string;
   score: number;
-  /** Neon colour used for this team throughout the game UI. */
-  color: string;
 }
 
 export type GamePhase = 'playing' | 'finished';
@@ -38,6 +36,8 @@ export interface ClueResult {
 }
 
 export interface GameState {
+  /** Unique per started game (a replay gets a new id). */
+  id: string;
   /** Snapshot of the board, so editing in admin never breaks a running game. */
   board: Board;
   teams: Team[];

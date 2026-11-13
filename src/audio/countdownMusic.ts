@@ -4,19 +4,7 @@
  * and density increase with `intensity` (0 = calm start, 1 = time almost up).
  */
 
-let sharedContext: AudioContext | null = null;
-
-export function getAudioContext(): AudioContext | null {
-  if (typeof window === 'undefined') return null;
-  const Ctor =
-    window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-  if (!Ctor) return null;
-  if (!sharedContext) sharedContext = new Ctor();
-  if (sharedContext.state === 'suspended') void sharedContext.resume();
-  return sharedContext;
-}
-
-export const midiToFreq = (midi: number) => 440 * 2 ** ((midi - 69) / 12);
+import { getAudioContext, midiToFreq, ScheduledSoundtrack } from './audioEngine';
 
 /** Am – F – Dm – E, one chord per bar. */
 const PROGRESSION = [
@@ -31,34 +19,11 @@ const BASS_STEPS = new Set([0, 3, 6, 8, 11, 14]);
 const ARP_PATTERN = [0, 1, 2, 1] as const;
 const MIN_BPM = 116;
 const MAX_BPM = 170;
-const LOOKAHEAD_S = 0.12;
-const SCHEDULER_MS = 25;
 const MASTER_VOLUME = 0.32;
 
-/** Common interface for the countdown soundtracks. */
-export interface CountdownSoundtrack {
-  setIntensity(value: number): void;
-  start(): void;
-  stop(): void;
-}
-
-export class CountdownMusic implements CountdownSoundtrack {
-  private readonly ctx: AudioContext;
-  private readonly master: GainNode;
-  private readonly noise: AudioBuffer;
-  private timer: number | null = null;
-  private step = 0;
-  private nextTime = 0;
-  private intensity = 0;
-
+export class CountdownMusic extends ScheduledSoundtrack {
   private constructor(ctx: AudioContext) {
-    this.ctx = ctx;
-    this.master = ctx.createGain();
-    this.master.gain.value = 0;
-    this.master.connect(ctx.destination);
-    this.noise = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.2), ctx.sampleRate);
-    const data = this.noise.getChannelData(0);
-    for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+    super(ctx, MASTER_VOLUME);
   }
 
   /** Returns null when Web Audio is unavailable (e.g. in tests). */
@@ -67,43 +32,13 @@ export class CountdownMusic implements CountdownSoundtrack {
     return ctx ? new CountdownMusic(ctx) : null;
   }
 
-  setIntensity(value: number): void {
-    this.intensity = Math.min(1, Math.max(0, value));
+  /** One sixteenth note at the current tempo. */
+  protected stepDuration(): number {
+    const bpm = MIN_BPM + (MAX_BPM - MIN_BPM) * this.intensity;
+    return 60 / bpm / 4;
   }
 
-  start(): void {
-    if (this.timer !== null) return;
-    const now = this.ctx.currentTime;
-    this.master.gain.cancelScheduledValues(now);
-    this.master.gain.setValueAtTime(0, now);
-    this.master.gain.linearRampToValueAtTime(MASTER_VOLUME, now + 0.3);
-    this.step = 0;
-    this.nextTime = now + 0.05;
-    this.timer = window.setInterval(() => this.schedule(), SCHEDULER_MS);
-    this.schedule();
-  }
-
-  /** Fades out and releases the audio graph. The instance cannot be restarted. */
-  stop(): void {
-    if (this.timer !== null) window.clearInterval(this.timer);
-    this.timer = null;
-    const now = this.ctx.currentTime;
-    this.master.gain.cancelScheduledValues(now);
-    this.master.gain.setValueAtTime(this.master.gain.value, now);
-    this.master.gain.linearRampToValueAtTime(0, now + 0.15);
-    window.setTimeout(() => this.master.disconnect(), 400);
-  }
-
-  private schedule(): void {
-    while (this.nextTime < this.ctx.currentTime + LOOKAHEAD_S) {
-      this.playStep(this.step, this.nextTime);
-      const bpm = MIN_BPM + (MAX_BPM - MIN_BPM) * this.intensity;
-      this.nextTime += 60 / bpm / 4;
-      this.step++;
-    }
-  }
-
-  private playStep(step: number, t: number): void {
+  protected playStep(step: number, t: number): void {
     const { bass, chord } = PROGRESSION[Math.floor(step / STEPS_PER_BAR) % PROGRESSION.length];
     const s = step % STEPS_PER_BAR;
     const tense = this.intensity;

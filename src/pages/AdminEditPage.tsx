@@ -6,6 +6,7 @@ import SaveIcon from '@mui/icons-material/Save';
 import { Link as RouterLink, useParams } from 'react-router-dom';
 import PageLayout from '../components/PageLayout';
 import CategoryEditor from '../components/CategoryEditor';
+import UnsavedChangesGuard from '../components/UnsavedChangesGuard';
 import { no } from '../i18n/no';
 import { useBoards } from '../game/BoardsContext';
 import { createEmptyCategory, MAX_TIMER_SECONDS, MIN_TIMER_SECONDS, validateBoard } from '../game/boardUtils';
@@ -138,6 +139,8 @@ function BoardEditor({ board }: { board: Board }) {
           {no.editor.addCategory}
         </Button>
       </Stack>
+
+      <UnsavedChangesGuard when={isDirty} />
 
       <Snackbar open={savedOpen} autoHideDuration={2500} onClose={() => setSavedOpen(false)}>
         <Alert severity="success" variant="filled" onClose={() => setSavedOpen(false)}>

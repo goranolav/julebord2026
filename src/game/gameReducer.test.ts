@@ -41,11 +41,11 @@ describe('gameReducer', () => {
     expect(state?.usedClueIds).toEqual([]);
   });
 
-  it('gives every team a distinct colour', () => {
-    const state = createGame(makeBoard(), ['A', 'B', 'C', 'D', 'E', 'F']);
-    const colors = state.teams.map((t) => t.color);
-    expect(new Set(colors).size).toBe(6);
-    colors.forEach((c) => expect(c).toMatch(/^#[0-9a-f]{6}$/i));
+  it('gives every new game its own id', () => {
+    const a = createGame(makeBoard(), ['A', 'B']);
+    const b = createGame(makeBoard(), ['A', 'B']);
+    expect(a.id).toBeTruthy();
+    expect(a.id).not.toBe(b.id);
   });
 
   it('ignores actions other than START_GAME when no game exists', () => {

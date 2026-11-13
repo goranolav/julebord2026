@@ -1,4 +1,4 @@
-import { getAudioContext, midiToFreq, type CountdownSoundtrack } from './countdownMusic';
+import { getAudioContext, midiToFreq, ScheduledSoundtrack } from './audioEngine';
 
 /**
  * Christmas countdown music: the "Jingle Bells" chorus (James Lord Pierpont, 1857 –
@@ -48,27 +48,11 @@ const BASS_BY_BAR = [43, 43, 43, 43, 48, 43, 45, 50, 43, 43, 43, 43, 48, 43, 50,
 const STEPS_PER_BAR = 8;
 const MIN_BPM = 110;
 const MAX_BPM = 160;
-const LOOKAHEAD_S = 0.12;
-const SCHEDULER_MS = 25;
 const MASTER_VOLUME = 0.38;
 
-export class ChristmasCountdownMusic implements CountdownSoundtrack {
-  private readonly ctx: AudioContext;
-  private readonly master: GainNode;
-  private readonly noise: AudioBuffer;
-  private timer: number | null = null;
-  private step = 0;
-  private nextTime = 0;
-  private intensity = 0;
-
+export class ChristmasCountdownMusic extends ScheduledSoundtrack {
   private constructor(ctx: AudioContext) {
-    this.ctx = ctx;
-    this.master = ctx.createGain();
-    this.master.gain.value = 0;
-    this.master.connect(ctx.destination);
-    this.noise = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.25), ctx.sampleRate);
-    const data = this.noise.getChannelData(0);
-    for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+    super(ctx, MASTER_VOLUME, 0.2);
   }
 
   /** Returns null when Web Audio is unavailable (e.g. in tests). */
@@ -77,44 +61,13 @@ export class ChristmasCountdownMusic implements CountdownSoundtrack {
     return ctx ? new ChristmasCountdownMusic(ctx) : null;
   }
 
-  setIntensity(value: number): void {
-    this.intensity = Math.min(1, Math.max(0, value));
+  /** One eighth note at the current tempo. */
+  protected stepDuration(): number {
+    const bpm = MIN_BPM + (MAX_BPM - MIN_BPM) * this.intensity;
+    return 60 / bpm / 2;
   }
 
-  start(): void {
-    if (this.timer !== null) return;
-    const now = this.ctx.currentTime;
-    this.master.gain.cancelScheduledValues(now);
-    this.master.gain.setValueAtTime(0, now);
-    this.master.gain.linearRampToValueAtTime(MASTER_VOLUME, now + 0.3);
-    this.step = 0;
-    this.nextTime = now + 0.05;
-    this.timer = window.setInterval(() => this.schedule(), SCHEDULER_MS);
-    this.schedule();
-  }
-
-  /** Fades out and releases the audio graph. The instance cannot be restarted. */
-  stop(): void {
-    if (this.timer !== null) window.clearInterval(this.timer);
-    this.timer = null;
-    const now = this.ctx.currentTime;
-    this.master.gain.cancelScheduledValues(now);
-    this.master.gain.setValueAtTime(this.master.gain.value, now);
-    this.master.gain.linearRampToValueAtTime(0, now + 0.2);
-    window.setTimeout(() => this.master.disconnect(), 500);
-  }
-
-  private schedule(): void {
-    while (this.nextTime < this.ctx.currentTime + LOOKAHEAD_S) {
-      const bpm = MIN_BPM + (MAX_BPM - MIN_BPM) * this.intensity;
-      const eighth = 60 / bpm / 2;
-      this.playStep(this.step, this.nextTime, eighth);
-      this.nextTime += eighth;
-      this.step++;
-    }
-  }
-
-  private playStep(step: number, t: number, eighth: number): void {
+  protected playStep(step: number, t: number, eighth: number): void {
     const loopStep = step % LOOP_STEPS;
     const tense = this.intensity;
 

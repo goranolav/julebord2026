@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { CountdownMusic, playTimeUpBuzzer, type CountdownSoundtrack } from '../audio/countdownMusic';
+import type { CountdownSoundtrack } from '../audio/audioEngine';
+import { CountdownMusic, playTimeUpBuzzer } from '../audio/countdownMusic';
 import { ChristmasCountdownMusic, playTimeUpBell } from '../audio/christmasMusic';
 import type { AppearanceId } from '../styles/appearance';
 import type { Countdown } from './useCountdown';

@@ -2,7 +2,7 @@ import { createSampleBoard } from '../data/sampleBoard';
 import { cloneBoardWithNewIds, DEFAULT_TIMER_SECONDS } from '../game/boardUtils';
 import type { Board, Category, Clue, GameState } from '../types/game';
 import { createId } from '../utils/id';
-import { teamColor } from '../styles/neon';
+import { safeGetItem, safeRemoveItem, safeSetItem } from './safeStorage';
 
 export const BOARDS_KEY = 'jeopardy.boards.v1';
 export const GAME_KEY = 'jeopardy.game.v1';
@@ -21,7 +21,7 @@ function safeParse(text: string | null): unknown {
 
 /** Loads boards from localStorage. Seeds a sample board the very first time. */
 export function loadBoards(): Board[] {
-  const raw = localStorage.getItem(BOARDS_KEY);
+  const raw = safeGetItem(BOARDS_KEY);
   if (raw === null) {
     const seeded = [createSampleBoard()];
     saveBoards(seeded);
@@ -33,7 +33,7 @@ export function loadBoards(): Board[] {
 }
 
 export function saveBoards(boards: Board[]): void {
-  localStorage.setItem(BOARDS_KEY, JSON.stringify(boards));
+  safeSetItem(BOARDS_KEY, JSON.stringify(boards));
 }
 
 export function getBoard(id: string): Board | undefined {
@@ -43,7 +43,7 @@ export function getBoard(id: string): Board | undefined {
 // ---------- Running game ----------
 
 export function loadGame(): GameState | null {
-  const parsed = safeParse(localStorage.getItem(GAME_KEY));
+  const parsed = safeParse(safeGetItem(GAME_KEY));
   if (!isObject(parsed)) return null;
   const board = toBoard(parsed.board);
   if (!board || !Array.isArray(parsed.teams) || !Array.isArray(parsed.usedClueIds)) return null;
@@ -53,13 +53,7 @@ export function loadGame(): GameState | null {
       (t): t is Record<string, unknown> & { id: string; name: string; score: number } =>
         isObject(t) && typeof t.id === 'string' && typeof t.name === 'string' && typeof t.score === 'number',
     )
-    .map((t, index) => ({
-      id: t.id,
-      name: t.name,
-      score: t.score,
-      // Games saved before team colours existed get a default colour.
-      color: typeof t.color === 'string' ? t.color : teamColor(index),
-    }));
+    .map((t) => ({ id: t.id, name: t.name, score: t.score }));
   const teamIds = new Set(teams.map((t) => t.id));
 
   const turnIndex =
@@ -89,6 +83,8 @@ export function loadGame(): GameState | null {
   const clueOpen = activeClueId !== null;
 
   return {
+    // Games saved before game ids existed get one now.
+    id: typeof parsed.id === 'string' ? parsed.id : createId(),
     board,
     teams,
     usedClueIds: parsed.usedClueIds.filter((id): id is string => typeof id === 'string'),
@@ -103,8 +99,8 @@ export function loadGame(): GameState | null {
 }
 
 export function saveGame(game: GameState | null): void {
-  if (game === null) localStorage.removeItem(GAME_KEY);
-  else localStorage.setItem(GAME_KEY, JSON.stringify(game));
+  if (game === null) safeRemoveItem(GAME_KEY);
+  else safeSetItem(GAME_KEY, JSON.stringify(game));
 }
 
 // ---------- Import / export ----------

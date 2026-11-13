@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Box, Button, Stack, Typography } from '@mui/material';
+import { Alert, Box, Button, IconButton, Stack, Tooltip, Typography } from '@mui/material';
 import FlagIcon from '@mui/icons-material/Flag';
 import HomeIcon from '@mui/icons-material/Home';
+import UndoIcon from '@mui/icons-material/Undo';
 import { Navigate, Link as RouterLink } from 'react-router-dom';
 import BoardGrid from '../components/BoardGrid';
 import ClueDialog from '../components/ClueDialog';
@@ -13,29 +14,33 @@ import { useGame } from '../game/GameContext';
 import { findClue, VALUE_STEP } from '../game/boardUtils';
 import { currentTurnTeam } from '../game/gameReducer';
 import { slideDown } from '../styles/neon';
+import { useBoardIntro } from '../hooks/useBoardIntro';
 import { useAppearance, useThemedTeams } from '../styles/appearanceMode';
 import type { Team } from '../types/game';
 import AppLogo from '../components/AppLogo';
 import ChristmasToggle from '../components/ChristmasToggle';
 
-/** Remembers which game already played the board intro, so it only runs once per game. */
-let introPlayedForGame: string | null = null;
-
 const NO_TEAMS: Team[] = [];
 
 export default function GamePage() {
-  const { game, dispatch } = useGame();
+  const { game, dispatch, undo, canUndo } = useGame();
   const [confirmEnd, setConfirmEnd] = useState(false);
   const { colors, glowText } = useAppearance();
   // Team colours follow the active theme.
   const teams = useThemedTeams(game?.teams ?? NO_TEAMS);
-  // Each new game gets fresh team ids, so the first team id identifies the game.
-  const gameKey = game?.teams[0]?.id ?? null;
-  const animateIn = gameKey !== null && introPlayedForGame !== gameKey;
+  const animateIn = useBoardIntro(game?.id ?? null);
 
+  // Ctrl+Z / Cmd+Z undoes the last host action (also while a clue is open).
   useEffect(() => {
-    introPlayedForGame = gameKey;
-  }, [gameKey]);
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && !event.shiftKey && event.key.toLowerCase() === 'z') {
+        event.preventDefault();
+        if (!event.repeat) undo();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [undo]);
 
   const handleCorrect = useCallback(() => dispatch({ type: 'MARK_CORRECT' }), [dispatch]);
   const handleWrong = useCallback(() => dispatch({ type: 'MARK_WRONG' }), [dispatch]);
@@ -90,6 +95,13 @@ export default function GamePage() {
           </Typography>
         )}
         <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+          <Tooltip title={no.game.undoHint}>
+            <span>
+              <IconButton aria-label={no.game.undo} onClick={undo} disabled={!canUndo}>
+                <UndoIcon />
+              </IconButton>
+            </span>
+          </Tooltip>
           <ChristmasToggle />
           <SoundToggle />
           <Button component={RouterLink} to="/" color="inherit" startIcon={<HomeIcon />}>
@@ -133,6 +145,8 @@ export default function GamePage() {
           onWrong={handleWrong}
           onReveal={handleReveal}
           onFinish={handleFinish}
+          onUndo={undo}
+          canUndo={canUndo}
         />
       )}
 

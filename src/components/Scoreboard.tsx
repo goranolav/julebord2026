@@ -3,13 +3,13 @@ import { Box, IconButton, Stack, Tooltip, Typography } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 import { no } from '../i18n/no';
-import type { Team } from '../types/game';
+import type { ColoredTeam } from '../styles/appearanceMode';
 import { useAnimatedNumber } from '../hooks/useAnimatedNumber';
 import { alpha, scoreFlash, scoreFlashAlt } from '../styles/neon';
 import { useAppearance } from '../styles/appearanceMode';
 
 interface ScoreboardProps {
-  teams: Team[];
+  teams: ColoredTeam[];
   step?: number;
   onAdjust?: (teamId: string, delta: number) => void;
   /** Team whose turn it is to pick a clue. */
@@ -45,7 +45,7 @@ export default function Scoreboard({ teams, step = 100, onAdjust, turnTeamId, an
 }
 
 interface TeamScoreProps {
-  team: Team;
+  team: ColoredTeam;
   index: number;
   step: number;
   onAdjust?: (teamId: string, delta: number) => void;

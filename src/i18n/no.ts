@@ -61,6 +61,10 @@ export const no = {
     unsavedChanges: 'Du har endringer som ikke er lagret.',
     notFound: 'Fant ikke brettet.',
     fixErrors: 'Rett opp følgende før du lagrer:',
+    leaveTitle: 'Forlate uten å lagre?',
+    leaveText: 'Du har endringer som ikke er lagret. De går tapt hvis du forlater siden.',
+    leave: 'Forlat',
+    stay: 'Bli',
   },
   validation: {
     boardNameRequired: 'Brettet må ha et navn.',
@@ -97,6 +101,8 @@ export const no = {
     toHome: 'Til forsiden',
     turn: (team: string) => `${team} sin tur – velg et spørsmål`,
     turnBadge: 'Tur',
+    undo: 'Angre',
+    undoHint: 'Angre siste handling (Ctrl+Z)',
   },
   clue: {
     answer: 'Svar',
@@ -115,8 +121,8 @@ export const no = {
     resume: 'Fortsett tiden',
     restart: 'Start tiden på nytt',
     secondsLeft: (s: number) => `${s} s`,
-    shortcutsAnswering: 'R: riktig · F: feil · Mellomrom: vis svar · M: lyd av/på',
-    shortcutsRevealed: 'Enter / mellomrom: fortsett',
+    shortcutsAnswering: 'R: riktig · F: feil · Shift+V: vis svar uten poeng · Ctrl+Z: angre · M: lyd av/på',
+    shortcutsRevealed: 'Enter / mellomrom: fortsett · Ctrl+Z: angre',
   },
   answerSheet: {
     title: 'Fasit',
@@ -136,6 +142,9 @@ export const no = {
   logo: {
     neon: 'Jeopardy!',
     christmas: 'Jeopardy! – juleutgave',
+  },
+  storage: {
+    writeFailed: 'Kunne ikke lagre – nettleserens lagringsplass er full eller blokkert. Eksporter brettene dine som JSON for å ta vare på dem.',
   },
   sound: {
     mute: 'Slå av lyd',

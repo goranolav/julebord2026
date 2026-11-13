@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Box, Button, Dialog, Fade, Stack, Typography } from '@mui/material';
+import { Box, Button, Dialog, Fade, IconButton, Stack, Tooltip, Typography } from '@mui/material';
+import UndoIcon from '@mui/icons-material/Undo';
 import { keyframes } from '@mui/material/styles';
 import CheckIcon from '@mui/icons-material/Check';
 import ClearIcon from '@mui/icons-material/Clear';
@@ -8,7 +9,8 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import { no } from '../i18n/no';
 import { useCountdown } from '../hooks/useCountdown';
 import { currentClueValue } from '../game/gameReducer';
-import type { Category, Clue, ClueResult, Team } from '../types/game';
+import type { Category, Clue, ClueResult } from '../types/game';
+import type { ColoredTeam } from '../styles/appearanceMode';
 import { alpha, revealGlow, slideDown } from '../styles/neon';
 import { useAppearance } from '../styles/appearanceMode';
 import CountdownTimer from './CountdownTimer';
@@ -19,7 +21,7 @@ import { useCountdownMusic } from '../hooks/useCountdownMusic';
 interface ClueDialogProps {
   category: Category;
   clue: Clue;
-  teams: Team[];
+  teams: ColoredTeam[];
   timerSeconds: number;
   answeringTeamId: string | null;
   failedTeamIds: string[];
@@ -29,6 +31,8 @@ interface ClueDialogProps {
   onWrong: () => void;
   onReveal: () => void;
   onFinish: () => void;
+  onUndo: () => void;
+  canUndo: boolean;
 }
 
 const FLIP_MS = 750;
@@ -63,6 +67,8 @@ export default function ClueDialog({
   onWrong,
   onReveal,
   onFinish,
+  onUndo,
+  canUndo,
 }: ClueDialogProps) {
   const answeringTeam = teams.find((t) => t.id === answeringTeamId) ?? null;
   const failedTeams = teams.filter((t) => failedTeamIds.includes(t.id));
@@ -79,35 +85,37 @@ export default function ClueDialog({
   const valueOnDark = christmas ? colors.gold : tile.text;
   const accent = answeringTeam?.color ?? colors.primary;
 
-  // Keyboard shortcuts for the host.
+  // Keyboard shortcuts for the host. Held-down keys (auto-repeat) and keys combined with
+  // Ctrl/Cmd/Alt are ignored, so e.g. holding F can't skip several teams and Ctrl+R still reloads.
+  // Giving up needs Shift+V, so a stray press can't throw the clue away.
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
       if (target && ['INPUT', 'TEXTAREA'].includes(target.tagName)) return;
+      if (event.ctrlKey || event.metaKey || event.altKey) return;
       const key = event.key.toLowerCase();
+      const isSpace = event.code === 'Space';
 
-      if (key === 'm') {
-        event.preventDefault();
-        setSoundEnabled(!soundEnabled);
-        return;
-      }
       if (answerRevealed) {
-        if (key === 'enter' || event.code === 'Space') {
+        if (key === 'enter' || isSpace) {
           event.preventDefault();
-          onFinish();
+          if (!event.repeat) onFinish();
+        } else if (key === 'm' && !event.repeat) {
+          setSoundEnabled(!soundEnabled);
         }
         return;
       }
-      if (key === 'r') {
+
+      // Space does nothing while a team is answering, but must not click a focused button.
+      if (isSpace) {
         event.preventDefault();
-        onCorrect();
-      } else if (key === 'f') {
-        event.preventDefault();
-        onWrong();
-      } else if (event.code === 'Space') {
-        event.preventDefault();
-        onReveal();
+        return;
       }
+      if (event.repeat) return;
+      if (key === 'm') setSoundEnabled(!soundEnabled);
+      else if (key === 'r' && !event.shiftKey) onCorrect();
+      else if (key === 'f' && !event.shiftKey) onWrong();
+      else if (key === 'v' && event.shiftKey) onReveal();
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
@@ -190,7 +198,16 @@ export default function ClueDialog({
                 {clue.value}
               </Box>
             </Typography>
-            <SoundToggle />
+            <Stack direction="row" sx={{ alignItems: 'center' }}>
+              <Tooltip title={no.game.undoHint}>
+                <span>
+                  <IconButton aria-label={no.game.undo} onClick={onUndo} disabled={!canUndo}>
+                    <UndoIcon />
+                  </IconButton>
+                </span>
+              </Tooltip>
+              <SoundToggle />
+            </Stack>
           </Stack>
 
           {answeringTeam && (

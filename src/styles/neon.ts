@@ -26,10 +26,6 @@ export const TEAM_COLORS: readonly string[] = [
   NEON.purple,
 ];
 
-export function teamColor(index: number): string {
-  return TEAM_COLORS[((index % TEAM_COLORS.length) + TEAM_COLORS.length) % TEAM_COLORS.length];
-}
-
 /** Layered text-shadow that makes text look like a neon tube. */
 export function neonText(color: string, intensity = 1): string {
   const i = intensity;

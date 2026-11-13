@@ -1,6 +1,7 @@
 import { useMemo, type ReactNode } from 'react';
 import { CssBaseline, ThemeProvider } from '@mui/material';
 import AppBackground from './components/AppBackground';
+import StorageErrorNotice from './components/StorageErrorNotice';
 import { useAppearance } from './styles/appearanceMode';
 import { createAppTheme } from './theme';
 
@@ -13,6 +14,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
       <CssBaseline />
       <AppBackground />
       {children}
+      <StorageErrorNotice />
     </ThemeProvider>
   );
 }

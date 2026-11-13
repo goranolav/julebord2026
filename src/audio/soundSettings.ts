@@ -1,24 +1,13 @@
-import { useCallback, useSyncExternalStore } from 'react';
+import { useCallback } from 'react';
+import { createPersistedSetting } from '../storage/persistedSetting';
 
 export const SOUND_KEY = 'jeopardy.sound.v1';
 
-const listeners = new Set<() => void>();
-
-function subscribe(listener: () => void): () => void {
-  listeners.add(listener);
-  return () => listeners.delete(listener);
-}
-
-function readEnabled(): boolean {
-  return localStorage.getItem(SOUND_KEY) !== 'off';
-}
+const soundSetting = createPersistedSetting(SOUND_KEY, 'on', ['on', 'off'] as const);
 
 /** Global, persisted sound on/off setting (on by default). */
 export function useSoundEnabled(): [boolean, (enabled: boolean) => void] {
-  const enabled = useSyncExternalStore(subscribe, readEnabled, () => true);
-  const setEnabled = useCallback((value: boolean) => {
-    localStorage.setItem(SOUND_KEY, value ? 'on' : 'off');
-    listeners.forEach((listener) => listener());
-  }, []);
-  return [enabled, setEnabled];
+  const [value, setValue] = soundSetting.useSetting();
+  const setEnabled = useCallback((enabled: boolean) => setValue(enabled ? 'on' : 'off'), [setValue]);
+  return [value === 'on', setEnabled];
 }

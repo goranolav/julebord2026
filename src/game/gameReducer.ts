@@ -1,6 +1,5 @@
 import type { Board, GameState, Team } from '../types/game';
 import { createId } from '../utils/id';
-import { teamColor } from '../styles/neon';
 import { countClues, findClue } from './boardUtils';
 
 export const MIN_TEAMS = 2;
@@ -30,13 +29,9 @@ const clearedClue = {
 } satisfies Partial<GameState>;
 
 export function createGame(board: Board, teamNames: string[]): GameState {
-  const teams: Team[] = teamNames.map((name, index) => ({
-    id: createId(),
-    name: name.trim(),
-    score: 0,
-    color: teamColor(index),
-  }));
+  const teams: Team[] = teamNames.map((name) => ({ id: createId(), name: name.trim(), score: 0 }));
   return {
+    id: createId(),
     board,
     teams,
     usedClueIds: [],
@@ -80,12 +75,12 @@ export function allCluesUsed(state: GameState): boolean {
 }
 
 /** Teams sorted by score (highest first). Stable for equal scores. */
-export function rankTeams(teams: Team[]): Team[] {
+export function rankTeams<T extends Team>(teams: T[]): T[] {
   return [...teams].sort((a, b) => b.score - a.score);
 }
 
 /** All teams sharing the top score (more than one = tie). Empty if no teams. */
-export function getWinners(teams: Team[]): Team[] {
+export function getWinners<T extends Team>(teams: T[]): T[] {
   if (teams.length === 0) return [];
   const top = Math.max(...teams.map((t) => t.score));
   return teams.filter((t) => t.score === top);

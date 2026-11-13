@@ -1,23 +1,30 @@
-import { createContext, useContext, useEffect, useReducer, type Dispatch, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, type ReactNode } from 'react';
 import { loadGame, saveGame } from '../storage/boardStorage';
 import type { GameState } from '../types/game';
-import { gameReducer, type GameAction } from './gameReducer';
+import { createHistory, historyReducer, type HistoryAction } from './gameHistory';
 
 interface GameContextValue {
   game: GameState | null;
-  dispatch: Dispatch<GameAction>;
+  dispatch: (action: HistoryAction) => void;
+  undo: () => void;
+  canUndo: boolean;
 }
 
 const GameContext = createContext<GameContextValue | null>(null);
 
 export function GameProvider({ children }: { children: ReactNode }) {
-  const [game, dispatch] = useReducer(gameReducer, null, loadGame);
+  const [history, dispatch] = useReducer(historyReducer, null, () => createHistory(loadGame()));
+  const game = history.present;
 
   useEffect(() => {
     saveGame(game);
   }, [game]);
 
-  return <GameContext.Provider value={{ game, dispatch }}>{children}</GameContext.Provider>;
+  const undo = useCallback(() => dispatch({ type: 'UNDO' }), []);
+  const canUndo = history.past.length > 0;
+  const value = useMemo(() => ({ game, dispatch, undo, canUndo }), [game, undo, canUndo]);
+
+  return <GameContext.Provider value={value}>{children}</GameContext.Provider>;
 }
 
 // eslint-disable-next-line react-refresh/only-export-components

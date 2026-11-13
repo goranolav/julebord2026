@@ -1,7 +1,8 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createEmptyBoard, validateBoard } from '../game/boardUtils';
 import { createSampleBoard } from '../data/sampleBoard';
-import { teamColor } from '../styles/neon';
+import { createGame } from '../game/gameReducer';
+import { onStorageError } from './safeStorage';
 import {
   BOARDS_KEY,
   exportBoardsJson,
@@ -37,13 +38,33 @@ describe('boardStorage', () => {
     expect(loadBoards()).toEqual([]);
   });
 
-  it('gives teams from older saved games a default colour', () => {
+  it('upgrades older saved games: drops stored colours and adds a game id', () => {
     const board = createSampleBoard();
     localStorage.setItem(
       GAME_KEY,
-      JSON.stringify({ board, teams: [{ id: 't1', name: 'Rød', score: 100 }], usedClueIds: [], phase: 'playing' }),
+      JSON.stringify({
+        board,
+        teams: [{ id: 't1', name: 'Rød', score: 100, color: '#123456' }],
+        usedClueIds: [],
+        phase: 'playing',
+      }),
     );
-    expect(loadGame()?.teams[0]).toEqual({ id: 't1', name: 'Rød', score: 100, color: teamColor(0) });
+    const game = loadGame()!;
+    expect(game.teams[0]).toEqual({ id: 't1', name: 'Rød', score: 100 });
+    expect(game.id).toBeTruthy();
+  });
+
+  it('does not crash when the browser refuses to save, and reports it', () => {
+    const errors: string[] = [];
+    const unsubscribe = onStorageError((key) => errors.push(key));
+    const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('Quota exceeded', 'QuotaExceededError');
+    });
+    expect(() => saveBoards([createSampleBoard()])).not.toThrow();
+    expect(() => saveGame(createGame(createSampleBoard(), ['A', 'B']))).not.toThrow();
+    expect(errors).toEqual([BOARDS_KEY, GAME_KEY]);
+    setItem.mockRestore();
+    unsubscribe();
   });
 
   it('upgrades older saved games to turn-based state', () => {
@@ -72,10 +93,11 @@ describe('boardStorage', () => {
   it('round-trips a turn-based game in progress', () => {
     const board = createSampleBoard();
     const game = {
+      id: 'g1',
       board,
       teams: [
-        { id: 't1', name: 'A', score: 0, color: '#000000' },
-        { id: 't2', name: 'B', score: 0, color: '#111111' },
+        { id: 't1', name: 'A', score: 0 },
+        { id: 't2', name: 'B', score: 0 },
       ],
       usedClueIds: [],
       activeClueId: board.categories[0].clues[0].id,

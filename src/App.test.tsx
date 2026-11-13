@@ -1,10 +1,8 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
+import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
-import App from './App';
-import { BoardsProvider } from './game/BoardsContext';
-import { GameProvider } from './game/GameContext';
+import { routes } from './routes';
 import AppShell from './AppShell';
 import { THEME_KEY } from './styles/appearanceMode';
 import { createSampleBoard } from './data/sampleBoard';
@@ -13,13 +11,7 @@ import { saveBoards } from './storage/boardStorage';
 function renderApp(path = '/') {
   return render(
     <AppShell>
-      <MemoryRouter initialEntries={[path]}>
-        <BoardsProvider>
-          <GameProvider>
-            <App />
-          </GameProvider>
-        </BoardsProvider>
-      </MemoryRouter>
+      <RouterProvider router={createMemoryRouter(routes, { initialEntries: [path] })} />
     </AppShell>,
   );
 }
@@ -115,4 +107,55 @@ describe('App smoke test', () => {
     await user.click(screen.getByRole('button', { name: 'Slå av juletema' }));
     expect(screen.getByRole('img', { name: 'Jeopardy!' })).toBeInTheDocument();
   });
+
+  it('lets the host undo with Ctrl+Z and uses safe shortcuts', async () => {
+    const user = userEvent.setup();
+    renderApp();
+    await user.click(screen.getByRole('link', { name: /spill/i }));
+    await user.click(screen.getByRole('button', { name: /start spill/i }));
+    await user.click(screen.getByRole('button', { name: 'Norsk geografi, 100' }));
+    expect(screen.getByText('Lag 1 svarer')).toBeInTheDocument();
+
+    // Space no longer gives up the clue.
+    await user.keyboard(' ');
+    expect(screen.queryByText('Oslo')).not.toBeInTheDocument();
+
+    // A held-down F (auto-repeat) only counts once.
+    fireEvent.keyDown(window, { key: 'f' });
+    fireEvent.keyDown(window, { key: 'f', repeat: true });
+    expect(screen.getByText('Lag 2 svarer')).toBeInTheDocument();
+
+    // Ctrl+Z gives the clue back to team 1.
+    await user.keyboard('{Control>}z{/Control}');
+    expect(screen.getByText('Lag 1 svarer')).toBeInTheDocument();
+
+    // Shift+V gives up and shows the answer.
+    await user.keyboard('{Shift>}V{/Shift}');
+    expect(screen.getByText('Oslo')).toBeInTheDocument();
+    expect(screen.getByText('Ingen svarte riktig')).toBeInTheDocument();
+
+    // The undo button in the clue view takes that back too.
+    const undoButtons = screen.getAllByRole('button', { name: 'Angre' });
+    await user.click(undoButtons[undoButtons.length - 1]);
+    expect(screen.queryByText('Oslo')).not.toBeInTheDocument();
+    expect(screen.getByText('Lag 1 svarer')).toBeInTheDocument();
+  });
+
+  it('warns before leaving the editor with unsaved changes', async () => {
+    const user = userEvent.setup();
+    renderApp('/admin');
+    await user.click(screen.getByText('Eksempelbrett'));
+    fireEvent.change(screen.getByDisplayValue('Eksempelbrett'), { target: { value: 'Julebord' } });
+
+    await user.click(screen.getByRole('link', { name: 'Tilbake' }));
+    expect(await screen.findByText('Forlate uten å lagre?')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Bli' }));
+    await waitFor(() => expect(screen.queryByText('Forlate uten å lagre?')).not.toBeInTheDocument());
+    expect(screen.getByDisplayValue('Julebord')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('link', { name: 'Tilbake' }));
+    await user.click(await screen.findByRole('button', { name: 'Forlat' }));
+    expect(await screen.findByText('Eksempelbrett')).toBeInTheDocument();
+    expect(screen.queryByDisplayValue('Julebord')).not.toBeInTheDocument();
+  }, 15000);
 });

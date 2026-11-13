@@ -4,8 +4,8 @@ import { THEME_KEY, useAppearance, useChristmasMode, useThemedTeams } from './ap
 import { christmasAppearance, neonAppearance } from './appearance';
 
 const teams = [
-  { id: 'a', name: 'A', score: 0, color: '#000000' },
-  { id: 'b', name: 'B', score: 0, color: '#000000' },
+  { id: 'a', name: 'A', score: 0 },
+  { id: 'b', name: 'B', score: 0 },
 ];
 
 describe('christmas mode', () => {
@@ -23,6 +23,21 @@ describe('christmas mode', () => {
     expect(other.result.current).toBe(christmasAppearance);
     act(() => toggle.result.current[1](false));
     expect(other.result.current).toBe(neonAppearance);
+  });
+
+  it('follows changes made in another browser tab', () => {
+    const { result } = renderHook(() => useChristmasMode()[0]);
+    act(() => {
+      localStorage.setItem(THEME_KEY, 'christmas');
+      window.dispatchEvent(new StorageEvent('storage', { key: THEME_KEY }));
+    });
+    expect(result.current).toBe(true);
+  });
+
+  it('ignores unknown stored values', () => {
+    localStorage.setItem(THEME_KEY, 'tull');
+    const { result } = renderHook(() => useAppearance());
+    expect(result.current).toBe(neonAppearance);
   });
 
   it('colours teams from the active theme', () => {
