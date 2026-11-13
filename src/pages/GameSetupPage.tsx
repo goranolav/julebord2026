@@ -2,8 +2,9 @@ import { useState, type FormEvent } from 'react';
 import { Alert, Box, Button, IconButton, Paper, Stack, TextField, Tooltip, Typography } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import PrintIcon from '@mui/icons-material/Print';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutlined';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom';
 import PageLayout from '../components/PageLayout';
 import { no } from '../i18n/no';
 import { useBoards } from '../game/BoardsContext';
@@ -137,6 +138,16 @@ export default function GameSetupPage() {
 
             <Button type="submit" variant="contained" size="large" startIcon={<PlayArrowIcon />}>
               {no.setup.startGame}
+            </Button>
+            {/* New tab, so team names typed in above are not lost. */}
+            <Button
+              component={RouterLink}
+              to={`/fasit/${board.id}`}
+              target="_blank"
+              rel="noopener"
+              startIcon={<PrintIcon />}
+            >
+              {no.answerSheet.printLink}
             </Button>
           </Stack>
         </Paper>

@@ -5,6 +5,7 @@ import AdminEditPage from './pages/AdminEditPage';
 import GameSetupPage from './pages/GameSetupPage';
 import GamePage from './pages/GamePage';
 import ResultPage from './pages/ResultPage';
+import AnswerSheetPage from './pages/AnswerSheetPage';
 
 export default function App() {
   return (
@@ -15,6 +16,7 @@ export default function App() {
       <Route path="/setup/:boardId" element={<GameSetupPage />} />
       <Route path="/game" element={<GamePage />} />
       <Route path="/result" element={<ResultPage />} />
+      <Route path="/fasit/:boardId" element={<AnswerSheetPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

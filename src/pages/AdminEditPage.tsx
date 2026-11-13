@@ -1,8 +1,9 @@
 import { useCallback, useState } from 'react';
-import { Alert, Box, Button, Snackbar, Stack, TextField, Typography } from '@mui/material';
+import { Alert, Box, Button, Snackbar, Stack, TextField, Tooltip, Typography } from '@mui/material';
+import PrintIcon from '@mui/icons-material/Print';
 import AddIcon from '@mui/icons-material/Add';
 import SaveIcon from '@mui/icons-material/Save';
-import { useParams } from 'react-router-dom';
+import { Link as RouterLink, useParams } from 'react-router-dom';
 import PageLayout from '../components/PageLayout';
 import CategoryEditor from '../components/CategoryEditor';
 import { no } from '../i18n/no';
@@ -71,9 +72,23 @@ function BoardEditor({ board }: { board: Board }) {
       backTo="/admin"
       maxWidth="lg"
       actions={
-        <Button variant="contained" startIcon={<SaveIcon />} onClick={handleSave} disabled={!isDirty}>
-          {no.common.save}
-        </Button>
+        <Stack direction="row" spacing={1}>
+          <Tooltip title={isDirty ? no.answerSheet.saveFirst : ''}>
+            <span>
+              <Button
+                component={RouterLink}
+                to={`/fasit/${board.id}`}
+                startIcon={<PrintIcon />}
+                disabled={isDirty}
+              >
+                {no.answerSheet.open}
+              </Button>
+            </span>
+          </Tooltip>
+          <Button variant="contained" startIcon={<SaveIcon />} onClick={handleSave} disabled={!isDirty}>
+            {no.common.save}
+          </Button>
+        </Stack>
       }
     >
       <Stack spacing={3}>

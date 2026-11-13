@@ -10,6 +10,7 @@ export default function NeonBackground() {
     <>
       <Box
         aria-hidden
+        className="neon-layer"
         sx={{ position: 'fixed', inset: 0, zIndex: -1, overflow: 'hidden', pointerEvents: 'none' }}
       >
         {/* Horizon glow */}
@@ -56,6 +57,7 @@ export default function NeonBackground() {
       {/* Scanlines (very subtle so they don't bother on a projector) */}
       <Box
         aria-hidden
+        className="neon-layer"
         sx={{
           position: 'fixed',
           inset: 0,

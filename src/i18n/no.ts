@@ -118,6 +118,17 @@ export const no = {
     shortcutsAnswering: 'R: riktig · F: feil · Mellomrom: vis svar · M: lyd av/på',
     shortcutsRevealed: 'Enter / mellomrom: fortsett',
   },
+  answerSheet: {
+    title: 'Fasit',
+    print: 'Skriv ut / lagre som PDF',
+    open: 'Fasit',
+    printLink: 'Skriv ut fasit',
+    saveFirst: 'Lagre endringene før du åpner fasiten',
+    notFound: 'Fant ikke brettet.',
+    hasImage: 'Spørsmålet har bilde',
+    summary: (categories: number, clues: number, seconds: number) =>
+      `${categories} temaer · ${clues} spørsmål · ${seconds} sek per spørsmål`,
+  },
   sound: {
     mute: 'Slå av lyd',
     unmute: 'Slå på lyd',

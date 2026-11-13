@@ -17,6 +17,7 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DownloadIcon from '@mui/icons-material/Download';
 import UploadIcon from '@mui/icons-material/Upload';
+import PrintIcon from '@mui/icons-material/Print';
 import { useNavigate } from 'react-router-dom';
 import PageLayout from '../components/PageLayout';
 import ConfirmDialog from '../components/ConfirmDialog';
@@ -109,6 +110,11 @@ export default function AdminListPage() {
                   disablePadding
                   secondaryAction={
                     <Stack direction="row" spacing={0.5}>
+                      <Tooltip title={no.answerSheet.open}>
+                        <IconButton aria-label={no.answerSheet.open} onClick={() => navigate(`/fasit/${board.id}`)}>
+                          <PrintIcon />
+                        </IconButton>
+                      </Tooltip>
                       <Tooltip title={no.admin.duplicate}>
                         <IconButton aria-label={no.admin.duplicate} onClick={() => duplicateBoard(board.id)}>
                           <ContentCopyIcon />
@@ -130,7 +136,7 @@ export default function AdminListPage() {
                     </Stack>
                   }
                 >
-                  <ListItemButton onClick={() => navigate(`/admin/${board.id}`)} sx={{ pr: 20 }}>
+                  <ListItemButton onClick={() => navigate(`/admin/${board.id}`)} sx={{ pr: 26 }}>
                     <ListItemText
                       primary={board.name || '—'}
                       secondary={`${no.home.boardSummary(board.categories.length, countClues(board))} · ${no.admin.lastUpdated(
